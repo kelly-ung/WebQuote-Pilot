@@ -4,6 +4,7 @@ function App() {
   const [result, setResult] = useState<string[]>([]); 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   // Function to call Gemini API 
   const getGeminiResponse= async (rawText: string, apiKey: string) => {
@@ -86,7 +87,8 @@ function App() {
   };
 
   // Function to handle scrolling to a quote
-  const handleScrollToQuote = async (query: string) => {
+  const handleScrollToQuote = async (query: string, index: number) => {
+    setActiveIndex(index);
     const trimQuery = query.trim(); // Remove any whitespace from ends
 
     try {
@@ -111,6 +113,7 @@ function App() {
 
       <div>
         <h1 className="text-3xl font-bold mt-6 mb-6">AI Quote Generator</h1>
+        <h2 className="text-sm font-bold mb-4">Click the button below to extract quotes from the current web page. You can click each quote to scroll to where it appears in the text.</h2>
 
         { /* Show when loading  */}
         {loading && (
@@ -124,17 +127,17 @@ function App() {
         {error && <div className="text-red-400">{error}</div> }
 
         { /* Display generated quotes */}
-        {result && (
+        {(result && !loading) && (
           <ul className="list-disc ml-6">
             {result.map((item, index) => (
-              <button onClick={() => handleScrollToQuote(item)} className="hover:bg-[#206eaa] cursor-pointer">
+              <button onClick={() => handleScrollToQuote(item, index)} className={activeIndex === index ? "[background-color:#206eaa] hover:bg-[#206eaa] cursor-pointer" : "hover:bg-[#206eaa] cursor-pointer"}>
                 <li key={index} className="mb-2">{item}</li> 
               </button>
             ))}
           </ul>
         )}
         
-        <button onClick={handleClick} className="mt-6 px-4 py-2 [background-color:#35a6d5] text-[#232c35] rounded hover:bg-[#206eaa] cursor-pointer transition-transform hover:scale-105">
+        <button onClick={handleClick} className="mt-6 mb-6 px-4 py-2 [background-color:#35a6d5] text-[#232c35] rounded hover:bg-[#206eaa] cursor-pointer transition-transform hover:scale-105">
           Generate Quotes
         </button>
       </div>
