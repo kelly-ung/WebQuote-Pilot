@@ -5,6 +5,8 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [selectedQuote, setSelectedQuote] = useState<string>('');
+  const [copied, setCopied] = useState<boolean>(false);
 
   // Function to call Gemini API 
   const getGeminiResponse= async (rawText: string, apiKey: string) => {
@@ -90,6 +92,7 @@ function App() {
   const handleScrollToQuote = async (query: string, index: number) => {
     setActiveIndex(index);
     const trimQuery = query.trim(); // Remove any whitespace from ends
+    setSelectedQuote(trimQuery);
 
     try {
       let [tab] = await chrome.tabs.query({ active: true, currentWindow: true }); // Get the active tab in the current window
@@ -99,12 +102,25 @@ function App() {
     catch (error) {
       console.log("Error:", error)
     }
-  }
+  };
+
+  // Function to handle copying a quote to clipboard
+    const handleCopy = () => {
+      navigator.clipboard.writeText(selectedQuote)
+      .then(() => {
+        console.log('Text copied to clipboard');
+        setCopied(true); // To trigger copied popup
+        setTimeout(() => setCopied(false), 2000); // Hide after 2 seconds
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+      });
+    };
 
   return (
     <>
       { /* Settings button */}
-      <button onClick={handleSettings} className="absolute top-4 right-4 px-4 py-2 cursor-pointer transition-transform hover:scale-105">
+      <button onClick={handleSettings} className="absolute top-4 right-4 px-2 py-2 [background-color:#35a6d5] text-[#232c35] rounded-full hover:bg-[#206eaa] cursor-pointer transition-transform hover:scale-105">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="size-6">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" />
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
@@ -112,8 +128,8 @@ function App() {
       </button>
 
       <div>
-        <h1 className="text-3xl font-bold mt-6 mb-6">AI Quote Generator</h1>
-        <h2 className="text-sm font-bold mb-4">Click the button below to extract quotes from the current web page. You can click each quote to scroll to where it appears in the text.</h2>
+        <h1 className="text-3xl font-bold mt-6 mb-6">WebQuote Pilot</h1>
+        <h2 className="text-sm font-bold mb-4">Click the button below to extract key information from the current web page. You can click each quote to scroll to where it appears in the text.</h2>
 
         { /* Show when loading  */}
         {loading && (
@@ -137,9 +153,28 @@ function App() {
           </ul>
         )}
         
-        <button onClick={handleClick} className="mt-6 mb-6 px-4 py-2 [background-color:#35a6d5] text-[#232c35] rounded hover:bg-[#206eaa] cursor-pointer transition-transform hover:scale-105">
+        <button 
+          onClick={handleClick} 
+          className="mt-6 mb-6 px-4 py-2 [background-color:#35a6d5] text-[#232c35] rounded-full hover:bg-[#206eaa] cursor-pointer transition-transform hover:scale-105"
+        >
           Generate Quotes
         </button>
+        
+        { /* Display copy button */}
+        {(activeIndex !== null) && (
+          <>
+            <button
+              onClick={handleCopy}
+              className="fixed bottom-4 right-4 px-2 py-2 [background-color:#35a6d5] text-[#232c35] rounded-full hover:bg-[#206eaa] cursor-pointer transition-transform hover:scale-105"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5A3.375 3.375 0 0 0 6.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0 0 15 2.25h-1.5a2.251 2.251 0 0 0-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 0 0-9-9Z" />
+              </svg>
+            </button>
+            
+            {copied && <div className="fixed bottom-4 px-2 py-2 [background-color:#35a6d5] text-[#232c35] rounded-full">Copied to clipboard!</div>}
+          </>
+        )}
       </div>
     </>
   )
